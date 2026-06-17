@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState('default');
+  const [notifSupported, setNotifSupported] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
   const { logout } = useAuth();
@@ -65,6 +66,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if ('Notification' in window) {
+      setNotifSupported(true);
       setNotificationPermission(Notification.permission);
     }
 
@@ -125,7 +127,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>          
           <div className="flex gap-4">
-            {notificationPermission !== 'granted' && 'Notification' in window && (
+            {notificationPermission !== 'granted' && notifSupported && (
               <button
                 onClick={requestNotificationPermission}
                 className="bg-accent/10 text-accent hover:bg-accent/20 px-4 py-2 rounded-md transition-colors text-sm font-semibold"

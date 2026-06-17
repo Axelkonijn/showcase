@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   // Heeft geen effect op `next dev`.
   output: "standalone",
 
+  // Dev-only: sta toe dat de dev-resources (HMR + client-chunks) benaderd worden via
+  // de proxy/containernamen i.p.v. alleen localhost. Geen effect op de productie-build.
+  allowedDevOrigins: ["showcase-proxy", "showcase-webapp", "localhost"],
+
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
       config.watchOptions = {
