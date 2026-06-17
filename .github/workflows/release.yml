@@ -20,7 +20,7 @@ jobs:
     name: Build & publish images
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: docker/login-action@v3
         with:
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: acceptance   # required reviewer = de approval-gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Promote (gesimuleerd) naar Acceptatie
         run: |
           echo "Promoveer exact deze images naar Acceptatie:"
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production   # required reviewer = de approval-gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Promote (gesimuleerd) naar Productie
         run: |
           echo "Promoveer EXACT dezelfde, reeds geteste image-tag naar Productie:"
