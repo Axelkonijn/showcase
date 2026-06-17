@@ -170,7 +170,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 =======
-  # SonarCloud draait via Automatic Analysis (SonarCloud's GitHub-app), niet in CI.
-  # De Quality Gate verschijnt als status-check op de PR en kan via branch
-  # protection verplicht gemaakt worden. Daarom is hier geen scan-job nodig.
+  # SonarCloud draait via Automatic Analysis, niet in CI.
 >>>>>>> Stashed changes
