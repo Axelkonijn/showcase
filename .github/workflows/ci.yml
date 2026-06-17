@@ -154,21 +154,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-<<<<<<< Updated upstream
-  # ---- Optioneel: SonarCloud (vereist SONAR_TOKEN + project op sonarcloud.io) ----
-  sonarcloud:
-    name: SAST/Quality (SonarCloud)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-=======
+
   # SonarCloud draait via Automatic Analysis, niet in CI.
->>>>>>> Stashed changes
