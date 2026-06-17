@@ -9,14 +9,13 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
-
 jobs:
   # ---- Gate 1: build + unit- en e2e-tests ----
   build-and-test:
     name: Build & tests (xUnit + Playwright)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -62,6 +61,8 @@ jobs:
   dependency-scan:
     name: Dependency scan (.NET + npm)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -117,6 +118,8 @@ jobs:
   container-scan:
     name: Container scan (Trivy)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -146,6 +149,8 @@ jobs:
   secret-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
