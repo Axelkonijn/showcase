@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # ---- .NET API ----
+  - package-ecosystem: nuget
+    directory: /ShowcaseAPI
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "security"]
+
+  # ---- Frontend ----
+  - package-ecosystem: npm
+    directory: /ShowcaseWebApp
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "security"]
+
+  # ---- E2E tests ----
+  - package-ecosystem: npm
+    directory: /Showcase.E2E
+    schedule:
+      interval: weekly
+    labels: ["dependencies"]
+
+  # ---- Docker base images ----
+  - package-ecosystem: docker
+    directory: /ShowcaseAPI
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: docker
+    directory: /ShowcaseWebApp
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "docker"]
+
+  # ---- GitHub Actions ----
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "ci"]

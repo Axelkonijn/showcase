@@ -1,0 +1,130 @@
+services:
+  # --- Reverse Proxy---
+  proxy:
+    image: nginx:alpine
+    container_name: showcase-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - showcase-webapp
+    networks:
+      - showcase-network
+
+  # --- Backend API ---
+  showcase-api:
+    build: 
+      context: ./ShowcaseAPI
+      dockerfile: Dockerfile
+    container_name: showcase-api
+    networks:
+      - showcase-network
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./ShowcaseAPI
+          target: /app
+          ignore:
+            -.vs/
+            - bin/
+            - obj/
+
+  # --- Frontend Web App ---
+  showcase-webapp:
+    build:
+      context: ./ShowcaseWebApp
+      dockerfile: Dockerfile
+    container_name: showcase-webapp
+    volumes:
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - WATCHPACK_POLLING=true
+    networks:
+      - showcase-network
+    depends_on:
+      - showcase-api
+    develop:
+      watch:
+        - action: sync
+          path: ./ShowcaseWebApp
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+
+  # --- Tests Runner ---
+  api-tests:
+    build:
+      context: .                    
+      dockerfile: ShowcaseAPI.Tests/Dockerfile 
+    container_name: showcase-api-tests
+    profiles: ["test"]
+    networks:
+      - showcase-network
+
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: Showcase.E2E/Dockerfile
+    container_name: showcase-e2e-tests
+    profiles: ["test"]
+    environment:
+      - BASE_URL=${E2E_BASE_URL}
+      - CI=true
+    depends_on:
+      - proxy
+      - showcase-api
+    networks:
+      - showcase-network
+    tty: true
+
+  # --- Postgress DB ---
+  db:
+    image: postgres:18.1-alpine3.22
+    container_name: showcase-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - showcase-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U showcase -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Adminer DB Tool ---
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    profiles: ["dev"]
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DESIGN: "galkaev"
+    networks:
+      - showcase-network
+    restart: unless-stopped
+
+networks:
+  showcase-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

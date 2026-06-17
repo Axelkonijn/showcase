@@ -1,0 +1,170 @@
+name: CI (Test-omgeving + security gates)
+
+# Draait op elke Pull Request naar main en op pushes naar main.
+# Dit is de "Test"-stap van de DTAP-straat: alle jobs hieronder zijn de gates
+# die onveilige software tegenhouden voordat die naar Acceptatie/Productie promoveert.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ---- Gate 1: build + unit- en e2e-tests ----
+  build-and-test:
+    name: Build & tests (xUnit + Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Genereer self-signed dev-certs voor nginx
+        run: |
+          mkdir -p certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout certs/nginx-selfsigned.key \
+            -out certs/nginx-selfsigned.crt \
+            -subj "/CN=showcase-proxy"
+
+      - name: Unit tests (xUnit)
+        run: docker compose run --rm --build api-tests
+
+      - name: Start applicatiestack
+        run: |
+          cp .env.example .env
+          # Geldige AES-256 sleutel (32 bytes, base64) genereren voor de testrun
+          KEY=$(openssl rand -base64 32)
+          sed -i "s|^APP_ENCRYPTION_KEY=.*|APP_ENCRYPTION_KEY=${KEY}|" .env
+          docker compose up -d --build proxy showcase-api showcase-webapp db
+
+      - name: Wacht tot de proxy bereikbaar is
+        run: |
+          for i in $(seq 1 30); do
+            if curl -ksf https://localhost/ >/dev/null; then echo "stack up"; exit 0; fi
+            echo "wachten op stack... ($i)"; sleep 5
+          done
+          echo "stack niet op tijd beschikbaar"; docker compose logs; exit 1
+
+      - name: E2E tests (Playwright)
+        run: docker compose run --rm e2e-tests
+
+      - name: Logs bij falen
+        if: failure()
+        run: docker compose logs
+
+      - name: Opruimen
+        if: always()
+        run: docker compose --profile test down -v
+
+  # ---- Gate 2: dependency-scanning ----
+  dependency-scan:
+    name: Dependency scan (.NET + npm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: .NET kwetsbare packages
+        working-directory: ShowcaseAPI
+        run: |
+          dotnet restore
+          echo "Controleren op kwetsbare NuGet-packages..."
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln.txt
+          if grep -q -i "has the following vulnerable packages" vuln.txt; then
+            echo "::error::Kwetsbare NuGet-packages gevonden."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "21"
+
+      - name: npm audit (webapp)
+        working-directory: ShowcaseWebApp
+        run: npm audit --audit-level=high
+
+      - name: npm audit (e2e)
+        working-directory: Showcase.E2E
+        run: npm audit --audit-level=high
+
+  # ---- Gate 3: SAST via CodeQL ----
+  codeql:
+    name: SAST (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ---- Gate 4: container image scanning (Trivy) ----
+  container-scan:
+    name: Container scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bouw API-image
+        run: docker build -t showcase-api:scan ./ShowcaseAPI
+
+      - name: Bouw webapp productie-image
+        run: docker build -f ./ShowcaseWebApp/Dockerfile.prod -t showcase-webapp:scan ./ShowcaseWebApp
+
+      - name: Trivy scan API
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: showcase-api:scan
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Trivy scan webapp
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: showcase-webapp:scan
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+  # ---- Gate 5: secret scanning (gitleaks) ----
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---- Optioneel: SonarCloud (vereist SONAR_TOKEN + project op sonarcloud.io) ----
+  sonarcloud:
+    name: SAST/Quality (SonarCloud)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io

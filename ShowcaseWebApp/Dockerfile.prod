@@ -1,0 +1,38 @@
+# Productie-image voor de Next.js frontend (gebruikt door Acceptatie/Productie).
+# De dev-image blijft het reguliere ./Dockerfile (npm run dev).
+
+# ---- Build stage ----
+FROM node:21-alpine AS build
+WORKDIR /app
+
+# Dependencies eerst (betere layer-caching)
+COPY package*.json ./
+RUN npm ci
+
+# Bron + productie-build (output: 'standalone' uit next.config.ts)
+COPY . .
+# NEXT_PUBLIC_* wordt bij de build ingebakken; /api wordt door nginx geproxyd.
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:21-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+# Luister op alle interfaces zodat nginx de container kan bereiken
+ENV HOSTNAME=0.0.0.0
+
+# Draai als de meegeleverde non-root 'node'-user
+USER node
+
+# Standalone server + statische assets + public
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
