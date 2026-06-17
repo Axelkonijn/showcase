@@ -5,23 +5,36 @@ updates:
     directory: /ShowcaseAPI
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels: ["dependencies", "security"]
+    groups:
+      nuget:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # ---- Frontend ----
   - package-ecosystem: npm
     directory: /ShowcaseWebApp
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels: ["dependencies", "security"]
+    groups:
+      webapp:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # ---- E2E tests ----
   - package-ecosystem: npm
     directory: /Showcase.E2E
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
     labels: ["dependencies"]
+    groups:
+      e2e:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # ---- Docker base images ----
   - package-ecosystem: docker
@@ -29,12 +42,18 @@ updates:
     schedule:
       interval: weekly
     labels: ["dependencies", "docker"]
+    groups:
+      docker-api:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /ShowcaseWebApp
     schedule:
       interval: weekly
     labels: ["dependencies", "docker"]
+    groups:
+      docker-webapp:
+        patterns: ["*"]
 
   # ---- GitHub Actions ----
   - package-ecosystem: github-actions
@@ -42,3 +61,6 @@ updates:
     schedule:
       interval: weekly
     labels: ["dependencies", "ci"]
+    groups:
+      github-actions:
+        patterns: ["*"]
