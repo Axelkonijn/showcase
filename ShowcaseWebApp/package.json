@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@microsoft/signalr": "10.0.0",
-    "axios": "1.13.2",
-    "next": "16.1.1",
+    "axios": "1.18.0",
+    "next": "16.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sonner": "^2.0.7"
@@ -22,7 +22,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
