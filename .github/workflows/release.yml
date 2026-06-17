@@ -29,7 +29,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push API-image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./ShowcaseAPI
           file: ./ShowcaseAPI/Dockerfile
@@ -39,7 +39,7 @@ jobs:
             ${{ env.IMAGE_BASE }}-api:${{ github.ref_name }}
 
       - name: Build & push webapp-image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./ShowcaseWebApp
           file: ./ShowcaseWebApp/Dockerfile.prod
