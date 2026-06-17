@@ -154,6 +154,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+<<<<<<< Updated upstream
   # ---- Optioneel: SonarCloud (vereist SONAR_TOKEN + project op sonarcloud.io) ----
   sonarcloud:
     name: SAST/Quality (SonarCloud)
@@ -168,3 +169,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+=======
+  # SonarCloud draait via Automatic Analysis (SonarCloud's GitHub-app), niet in CI.
+  # De Quality Gate verschijnt als status-check op de PR en kan via branch
+  # protection verplicht gemaakt worden. Daarom is hier geen scan-job nodig.
+>>>>>>> Stashed changes
