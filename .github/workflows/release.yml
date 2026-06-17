@@ -12,7 +12,8 @@ permissions:
   packages: write
 
 env:
-  IMAGE_BASE: ghcr.io/${{ github.repository }}
+  # ghcr vereist een volledig lowercase owner/repo (github.repository behoudt hoofdletters).
+  IMAGE_BASE: ghcr.io/axelkonijn/showcase
 
 jobs:
   # ---- Build once + publish naar ghcr.io ----
